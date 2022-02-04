@@ -70,7 +70,10 @@ const createSeatBlock = (n, count) => {
     return fuselage;
 }
 
-const createAirplane = (title, scheme) => {
+const createAirplane = (title, tourData) => {
+
+  const scheme = tourData.scheme;
+
   const choisesSeat = createElement('form', {
       className: 'choises-seat',
   });
@@ -102,11 +105,50 @@ const createAirplane = (title, scheme) => {
   return choisesSeat;
 }
 
-const airplane = (main, data) => {
-    const title = `Choose ${data.length} ${data.length === 1 ? 'seat' : 'seats'}`;
-    const scheme = ['exit', 11, 'exit', 1, 'exit', 17, 'exit'];
+const checkSeat = (form, data, main) => {
 
-    main.append(createAirplane(title, scheme))
+    form.addEventListener('change', () => {
+        const formData = new FormData(form);
+        const checked = [...formData].map(([, value]) => value);
+
+        if (checked.length === data.length){
+            [...form].forEach(item => {
+                if (item.checked === false && item.name === 'seat'){
+                    item.disabled = true;
+                }
+            })
+        }
+    });
+
+    form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        const formData = new FormData(form);
+        const booking = [...formData].map(([, value]) => value);
+
+        for(let i = 0; i < data.length; i++){
+            data[i].seat = booking[i];
+        }
+
+        form.remove()
+
+        const thanks = createElement('h2', {
+            className: 'title',
+            innerHTML: 'Thanks for your choice!<br/>Your seats ' + `${booking}`,
+        })
+
+        main.append(thanks)
+    });
+}
+
+const airplane = (main, data, tourData) => {
+    const title = `Choose ${data.length} ${data.length === 1 ? 'seat' : 'seats'}`;
+
+    const choiceForm = createAirplane(title, tourData);
+    checkSeat(choiceForm, data, main);
+
+
+
+    main.append(choiceForm)
 }
 
 export default airplane;
