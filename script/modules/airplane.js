@@ -1,4 +1,5 @@
 import createElement from "./createElement.js";
+import {setStorage, getStorage} from "../service/storage.js";
 
 const createCockpit = (titleText) => {
 
@@ -30,7 +31,7 @@ const createExit = () => {
   return fuselage;
 };
 
-const createSeatBlock = (n, count) => {
+const createSeatBlock = (n, count, bookingSeat) => {
   const letters = ['A', 'B', 'C', 'D', 'E', 'F'];
 
     const fuselage = createElement('ol', {
@@ -51,10 +52,12 @@ const createSeatBlock = (n, count) => {
 
             const checkWrapper = createElement('label');
 
+            const seatValue = `${"" + i + letter}`;
             const check = createElement('input', {
                 name: 'seat',
                 type: 'checkbox',
-                value: `${"" + i + letter}`,
+                value: seatValue,
+                disabled: bookingSeat.includes(seatValue)
             });
 
             checkWrapper.append(check);
@@ -71,8 +74,8 @@ const createSeatBlock = (n, count) => {
 }
 
 const createAirplane = (title, tourData) => {
-
   const scheme = tourData.scheme;
+  const bookingSeat = getStorage(tourData.id).map(item => item.seat)
 
   const choisesSeat = createElement('form', {
       className: 'choises-seat',
@@ -93,7 +96,7 @@ const createAirplane = (title, tourData) => {
       }
 
       if (typeof type === 'number'){
-        const seatBlock = createSeatBlock(n, type);
+        const seatBlock = createSeatBlock(n, type, bookingSeat);
         n = n + type;
         return seatBlock;
       }
@@ -105,16 +108,23 @@ const createAirplane = (title, tourData) => {
   return choisesSeat;
 }
 
-const checkSeat = (form, data, main) => {
+const checkSeat = (form, data, main, id) => {
 
     form.addEventListener('change', () => {
         const formData = new FormData(form);
         const checked = [...formData].map(([, value]) => value);
+        const bookingSeat = getStorage(id).map(item => item.seat);
 
         if (checked.length === data.length){
             [...form].forEach(item => {
                 if (item.checked === false && item.name === 'seat'){
                     item.disabled = true;
+                }
+            })
+        } else {
+            [...form].forEach(item => {
+                if (!bookingSeat.includes(item.value)){
+                    item.disabled = false;
                 }
             })
         }
@@ -128,6 +138,8 @@ const checkSeat = (form, data, main) => {
         for(let i = 0; i < data.length; i++){
             data[i].seat = booking[i];
         }
+
+        setStorage(data, id);
 
         form.remove()
 
@@ -144,9 +156,7 @@ const airplane = (main, data, tourData) => {
     const title = `Choose ${data.length} ${data.length === 1 ? 'seat' : 'seats'}`;
 
     const choiceForm = createAirplane(title, tourData);
-    checkSeat(choiceForm, data, main);
-
-
+    checkSeat(choiceForm, data, main, tourData.id);
 
     main.append(choiceForm)
 }
